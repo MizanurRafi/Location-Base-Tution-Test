@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>TutorFinder Pro - Premium</title>
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+
+    <style>
+        :root { 
+            --primary: #FF6F00; 
+            --secondary: #2C3E50;
+            --user-color: #3498db;
+        }
+        
+        body { background-color: #f4f7f6; margin: 0; font-family: 'Segoe UI', sans-serif; display: flex; justify-content: center; height: 100vh; overflow: hidden; }
+
+        .app-container {
+            width: 100%; max-width: 480px; height: 100vh;
+            background: white; position: relative; display: flex; flex-direction: column;
+            box-shadow: 0 0 25px rgba(0,0,0,0.1);
+        }
+
+        #map { flex: 1; width: 100%; z-index: 1; }
+
+        /* পিন ডিজাইন */
+        .tuition-pin {
+            background: var(--primary); border: 3px solid white;
+            border-radius: 50% 50% 50% 0; transform: rotate(-45deg);
+            width: 35px !important; height: 35px !important;
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+        .tuition-pin i { transform: rotate(45deg); color: white; font-size: 14px; }
+
+        .user-pin {
+            background: var(--user-color); border: 3px solid white;
+            border-radius: 50%; width: 40px !important; height: 40px !important;
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 0 15px rgba(52, 152, 219, 0.4);
+            animation: pulse 2s infinite;
+        }
+        .user-pin i { color: white; font-size: 18px; }
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
+
+        /* সার্চ এরিয়া */
+        .search-wrapper { position: absolute; top: 15px; left: 15px; right: 15px; z-index: 1000; }
+        .search-box {
+            display: flex; background: white; padding: 10px 15px; border-radius: 15px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1); align-items: center;
+        }
+        .search-box input { flex: 1; border: none; outline: none; font-size: 15px; margin-left: 10px; }
+        
+        .suggestion-list {
+            background: white; border-radius: 12px; margin-top: 5px;
+            max-height: 200px; overflow-y: auto; display: none;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .suggestion-item { padding: 12px 15px; border-bottom: 1px solid #eee; cursor: pointer; font-size: 14px; }
+
+        /* পপ-আপ কার্ড স্টাইল */
+        .leaflet-popup-content-wrapper { border-radius: 15px; padding: 0; overflow: hidden; }
+        .leaflet-popup-content { margin: 0 !important; width: 240px !important; }
+        .pop-card { overflow: hidden; }
+        .pop-header { background: #fff3e0; color: #e65100; padding: 10px; text-align: center; font-weight: bold; border-bottom: 1px solid #ffe0b2; }
+        .pop-body { padding: 15px; }
+        .pop-info { margin-bottom: 5px; font-size: 14px; color: #444; }
+        .dist-badge { background: #f0f0f0; padding: 4px 10px; border-radius: 20px; font-size: 12px; display: inline-block; margin-top: 10px; color: #666; }
+        
+        .btn-pop-details {
+            width: 100%; padding: 10px; background: var(--primary); color: white;
+            border: none; font-weight: bold; cursor: pointer; text-align: center;
+        }
+
+        /* বটম শিট */
+        #bottom-sheet {
+            position: absolute; bottom: -100%; left: 0; right: 0;
+            background: white; z-index: 2000; padding: 20px;
+            border-radius: 25px 25px 0 0; box-shadow: 0 -5px 20px rgba(0,0,0,0.1);
+            transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        #bottom-sheet.active { bottom: 0; }
+        .sheet-handle { width: 40px; height: 5px; background: #ddd; border-radius: 10px; margin: -10px auto 15px; }
+        
+        .apply-btn {
+            width: 100%; padding: 15px; background: var(--primary); color: white;
+            border: none; border-radius: 12px; font-weight: bold; font-size: 16px;
+            margin-top: 20px; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 10px;
+        }
+
+        /* মেনু বার */
+        .bottom-nav {
+            height: 70px; background: white; display: flex;
+            justify-content: space-around; align-items: center;
+            border-top: 1px solid #eee; z-index: 1001;
+        }
+        .nav-item { text-align: center; color: #95a5a6; text-decoration: none; font-size: 10px; flex: 1; }
+        .nav-item i { font-size: 20px; display: block; margin-bottom: 4px; }
+        .nav-item.active { color: var(--primary); }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    <div class="search-wrapper">
+        <div class="search-box">
+            <i class="fas fa-search" style="color: #bbb;"></i>
+            <input type="text" id="loc-input" placeholder="লোকেশন সার্চ করুন..." oninput="handleSuggestions()">
+        </div>
+        <div id="suggestions" class="suggestion-list"></div>
+    </div>
+
+    <div id="map"></div>
+
+    <div id="bottom-sheet">
+        <div class="sheet-handle"></div>
+        <div id="sheet-content"></div>
+        <button class="apply-btn" onclick="confirmApply()">
+            <i class="fas fa-paper-plane"></i> এখনই আবেদন করুন
+        </button>
+        <button onclick="closeSheet()" style="width:100%; margin-top:10px; background:none; border:none; color:#999; font-size:14px;">ফিরে যান</button>
+    </div>
+
+    <nav class="bottom-nav">
+        <a href="#" class="nav-item"><i class="fas fa-home"></i>Home</a>
+        <a href="#" class="nav-item active"><i class="fas fa-map-marked-alt"></i>My Map</a>
+        <a href="#" class="nav-item"><i class="fas fa-comments"></i>Live Chat</a>
+        <a href="#" class="nav-item"><i class="fas fa-th-large"></i>Dashboard</a>
+        <a href="#" class="nav-item"><i class="fas fa-user"></i>Profile</a>
+    </nav>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+    var map = L.map('map', { zoomControl: false }).setView([23.8103, 90.4125], 13);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png').addTo(map);
+
+    let userPos = [23.8103, 90.4125];
+    let userMarker, radiusCircle, markers = [];
+
+    const userIcon = L.divIcon({ html: '<div class="user-pin"><i class="fas fa-user-tie"></i></div>', className: '', iconSize: [40, 40] });
+    const bookIcon = L.divIcon({ html: '<div class="tuition-pin"><i class="fas fa-book"></i></div>', className: '', iconSize: [35, 35], iconAnchor: [17, 35] });
+
+    // ১. লোকেশন সাজেশন
+    async function handleSuggestions() {
+        const query = document.getElementById('loc-input').value;
+        const suggestionBox = document.getElementById('suggestions');
+        if (query.length < 3) { suggestionBox.style.display = 'none'; return; }
+
+        const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${query}&countrycodes=bd`);
+        const data = await res.json();
+
+        suggestionBox.innerHTML = '';
+        if (data.length > 0) {
+            suggestionBox.style.display = 'block';
+            data.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'suggestion-item';
+                div.innerText = item.display_name;
+                div.onclick = () => selectLocation(item.lat, item.lon, item.display_name);
+                suggestionBox.appendChild(div);
+            });
+        }
+    }
+
+    function selectLocation(lat, lon, name) {
+        document.getElementById('loc-input').value = name;
+        document.getElementById('suggestions').style.display = 'none';
+        updateMap(lat, lon);
+    }
+
+    function updateMap(lat, lon) {
+        lat = parseFloat(lat); lon = parseFloat(lon);
+        userPos = [lat, lon];
+        map.setView(userPos, 14);
+
+        if (userMarker) map.removeLayer(userMarker);
+        if (radiusCircle) map.removeLayer(radiusCircle);
+
+        userMarker = L.marker(userPos, {icon: userIcon}).addTo(map);
+        radiusCircle = L.circle(userPos, { radius: 5000, color: '#FF6F00', weight: 1, fillOpacity: 0.05 }).addTo(map);
+
+        loadTuitions(lat, lon);
+    }
+
+    // ২. টিউশন ডাটা লোড
+    function loadTuitions(lat, lon) {
+        markers.forEach(m => map.removeLayer(m));
+        const categories = ["ছেলে টিচার প্রয়োজন", "মেয়ে টিচার প্রয়োজন", "টিচার প্রয়োজন"];
+        
+        for (let i = 0; i < 40; i++) {
+            const tLat = lat + (Math.random() - 0.5) * 0.07;
+            const tLon = lon + (Math.random() - 0.5) * 0.07;
+            const dist = (map.distance([lat, lon], [tLat, tLon]) / 1000).toFixed(2);
+
+            if (dist <= 5) {
+                const marker = L.marker([tLat, tLon], {icon: bookIcon}).addTo(map);
+                const info = {
+                    title: categories[i % 3],
+                    class: (i % 4 + 7) + "ম শ্রেণি",
+                    salary: (4500 + (i * 100)) + " TK",
+                    sub: "গণিত ও বিজ্ঞান"
+                };
+
+                // পপ-আপ কার্ড ডিজাইন
+                marker.bindPopup(`
+                    <div class="pop-card">
+                        <div class="pop-header">${info.title}</div>
+                        <div class="pop-body">
+                            <div class="pop-info"><b>শ্রেণি:</b> ${info.class}</div>
+                            <div class="pop-info"><b>বেতন:</b> ${info.salary}</div>
+                            <div class="pop-info"><b>বিষয়:</b> ${info.sub}</div>
+                            <div class="dist-badge"><i class="fas fa-map-marker-alt"></i> ${dist} কিমি দূরে</div>
+                        </div>
+                        <button class="btn-pop-details" onclick="openSheet('${info.title}', '${info.class}', '${info.salary}', '${info.sub}')">বিস্তারিত দেখুন</button>
+                    </div>
+                `);
+                markers.push(marker);
+            }
+        }
+    }
+
+    // ৩. বিস্তারিত বটম শিট
+    function openSheet(title, cls, sal, sub) {
+        document.getElementById('sheet-content').innerHTML = `
+            <h2 style="color:var(--primary); margin:0 0 10px 0;">${title}</h2>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                <p><b>শ্রেণি:</b> ${cls}</p>
+                <p><b>সম্মানী:</b> ${sal}</p>
+                <p><b>বিষয়:</b> ${sub}</p>
+                <p><b>দিন:</b> সপ্তাহে ৩ দিন</p>
+            </div>
+            <hr style="border:0; border-top:1px solid #eee; margin:15px 0;">
+            <p style="font-size:14px; color:#555; line-height:1.6;">
+                <b>বিবরণ:</b> ছাত্রের পড়াশোনায় উন্নতির জন্য একজন দায়িত্বশীল টিউটর প্রয়োজন। অভিজ্ঞদের অগ্রাধিকার দেওয়া হবে। লোকেশন: ম্যাপে চিহ্নিত এলাকা।
+            </p>
+        `;
+        document.getElementById('bottom-sheet').classList.add('active');
+        map.closePopup();
+    }
+
+    function closeSheet() { document.getElementById('bottom-sheet').classList.remove('active'); }
+
+    function confirmApply() {
+        alert("আপনার আবেদনটি সফলভাবে গ্রহণ করা হয়েছে! টিচার আপনার সাথে যোগাযোগ করবেন।");
+        closeSheet();
+    }
+
+    // শুরুতে বর্তমান লোকেশন খোঁজা
+    navigator.geolocation.getCurrentPosition(
+        p => updateMap(p.coords.latitude, p.coords.longitude),
+        () => updateMap(23.8103, 90.4125)
+    );
+</script>
+
+</body>
+</html>

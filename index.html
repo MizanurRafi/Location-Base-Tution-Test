@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>TutorFinder Pro - Custom Update</title>
+    <title>TutorFinder Pro - Centered Modal Update</title>
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
@@ -75,13 +75,12 @@
         .drawer-content { padding: 0 25px 40px; max-height: 70vh; overflow-y: auto; }
         .close-icon { position: absolute; top: 15px; right: 20px; font-size: 22px; color: #ccc; cursor: pointer; }
 
-        /* ডানদিকের ফ্লোটিং বাটনসমূহ (My Area & Radius Booster) */
+        /* ডানদিকের ফ্লোটিং বাটনসমূহ */
         .map-controls {
             position: absolute; bottom: 100px; right: 20px; 
             display: flex; flex-direction: column; gap: 12px; z-index: 1000;
         }
         
-        /* My Area Button */
         .my-area-btn {
             background: white; color: var(--secondary);
             padding: 8px 15px; border-radius: 20px;
@@ -92,26 +91,49 @@
             transition: all 0.3s;
         }
         .my-area-btn i { color: var(--user-color); font-size: 16px; }
-        .my-area-btn:active { transform: scale(0.95); background: #f0f0f0; }
 
-        /* Radius Booster Button */
         .radius-booster { 
             background: var(--primary-gradient); color: white; 
             width: 54px; height: 54px; border-radius: 18px; 
             display: flex; align-items: center; justify-content: center; 
             box-shadow: 0 6px 20px rgba(255,111,0,0.4); 
             border: 2px solid white; cursor: pointer;
-            margin-left: auto; /* অ্যালাইনমেন্ট ঠিক রাখার জন্য */
+            margin-left: auto;
             transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
         .radius-booster:active { transform: scale(0.9) rotate(15deg); }
-        .radius-booster i { font-size: 20px; }
 
-        /* প্রিমিয়াম মডাল */
-        #premium-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); backdrop-filter: blur(4px); z-index: 5000; display: none; align-items: center; justify-content: center; padding: 20px; }
-        .modal-card { background: white; width: 100%; max-width: 360px; border-radius: 30px; overflow: hidden; animation: slideUp 0.3s ease-out; }
+        /* প্রিমিয়াম মডাল - সম্পূর্ণ স্ক্রিনে ফিক্সড এবং সেন্টারেড */
+        #premium-modal { 
+            position: fixed; 
+            top: 0; 
+            left: 0; 
+            width: 100vw; 
+            height: 100vh; 
+            background: rgba(0,0,0,0.8); 
+            backdrop-filter: blur(5px); 
+            z-index: 9999; /* সর্বোচ্চ লেভেলে রাখা হয়েছে */
+            display: none; 
+            align-items: center; 
+            justify-content: center; 
+            padding: 20px;
+            box-sizing: border-box;
+        }
         
-        @keyframes slideUp { from { transform: translateY(50px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        .modal-card { 
+            background: white; 
+            width: 100%; 
+            max-width: 360px; /* মোবাইলের জন্য স্ট্যান্ডার্ড সাইজ */
+            border-radius: 30px; 
+            overflow: hidden; 
+            animation: modalPop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+        }
+        
+        @keyframes modalPop { 
+            from { transform: scale(0.85); opacity: 0; } 
+            to { transform: scale(1); opacity: 1; } 
+        }
         
         .plan-option { 
             display: flex; justify-content: space-between; padding: 18px; 
@@ -119,7 +141,6 @@
             margin-bottom: 12px; cursor: pointer; transition: all 0.2s;
         }
         .plan-option.active { border-color: var(--primary); background: #fff8f1; }
-        .plan-option:hover { border-color: #ffd180; }
 
         /* বটম মেনু */
         .bottom-nav { height: 75px; background: white; display: flex; justify-content: space-around; align-items: center; border-top: 1px solid #f0f0f0; z-index: 1001; padding-bottom: env(safe-area-inset-bottom); }
@@ -156,41 +177,6 @@
         <div class="drawer-content" id="drawer-body"></div>
     </div>
 
-    <div id="premium-modal">
-        <div class="modal-card">
-            <div style="background: var(--primary-gradient); color:white; padding:35px 25px; text-align:center; position: relative;">
-                <div style="position: absolute; top: -10px; right: -10px; opacity: 0.1; font-size: 100px;"><i class="fas fa-rss"></i></div>
-                <i class="fas fa-bolt-lightning" style="font-size:40px; margin-bottom:15px; text-shadow: 0 4px 10px rgba(0,0,0,0.2);"></i>
-                <h2 style="margin:0; font-size: 24px; letter-spacing: 1px;">রেডিয়াস বুস্টার</h2>
-                <p style="margin: 5px 0 0; font-size: 13px; opacity: 0.9;">আপনার এলাকা বড় করুন, বেশি টিউশন পান</p>
-            </div>
-            <div style="padding:25px;">
-                <div class="plan-option active">
-                    <div>
-                        <b style="font-size: 15px;">রেগুলার টিউটর (৫ কিমি)</b><br>
-                        <small style="color:#888;"><i class="fas fa-circle-check"></i> বর্তমানে সক্রিয় আছে</small>
-                    </div>
-                    <div style="color: #2ecc71; font-weight: 800; font-size: 16px;">ফ্রি</div>
-                </div>
-                <div class="plan-option" onclick="alert('পেমেন্ট গেটওয়ে লোড হচ্ছে...')">
-                    <div>
-                        <b style="font-size: 15px;">পাওয়ার টিউটর (১০ কিমি)</b><br>
-                        <small style="color:#888;"><i class="fas fa-fire"></i> ২ গুণ বেশি টিউশন দেখা যাবে</small>
-                    </div>
-                    <div style="color: var(--primary); font-weight: 800; font-size: 16px;">৳ ১০০</div>
-                </div>
-                <div class="plan-option" onclick="alert('পেমেন্ট গেটওয়ে লোড হচ্ছে...')">
-                    <div>
-                        <b style="font-size: 15px;">সুপার টিউটর (১৫ কিমি)</b><br>
-                        <small style="color:#888;"><i class="fas fa-star"></i> সর্বোচ্চ টিউশন সুবিধা</small>
-                    </div>
-                    <div style="color: var(--primary); font-weight: 800; font-size: 16px;">৳ ১৫০</div>
-                </div>
-                <button onclick="toggleModal(false)" style="width:100%; padding:16px; border:none; background:#f5f5f5; border-radius:18px; font-weight:700; color:#666; margin-top: 10px; cursor:pointer;">পরে করবো</button>
-            </div>
-        </div>
-    </div>
-
     <nav class="bottom-nav">
         <a href="#" class="nav-item"><i class="fas fa-home"></i>Home</a>
         <a href="#" class="nav-item active"><i class="fas fa-map-location-dot"></i>My Map</a>
@@ -198,6 +184,42 @@
         <a href="#" class="nav-item"><i class="fas fa-chart-pie"></i>Dashboard</a>
         <a href="#" class="nav-item"><i class="fas fa-user-circle"></i>Profile</a>
     </nav>
+</div>
+
+<!-- প্রিমিয়াম মডাল (app-container এর বাইরে রাখা হয়েছে যাতে সেন্টারিং ঠিক থাকে) -->
+<div id="premium-modal">
+    <div class="modal-card">
+        <div style="background: var(--primary-gradient); color:white; padding:35px 25px; text-align:center; position: relative;">
+            <div style="position: absolute; top: -10px; right: -10px; opacity: 0.1; font-size: 100px;"><i class="fas fa-rss"></i></div>
+            <i class="fas fa-bolt-lightning" style="font-size:40px; margin-bottom:15px; text-shadow: 0 4px 10px rgba(0,0,0,0.2);"></i>
+            <h2 style="margin:0; font-size: 24px; letter-spacing: 1px;">রেডিয়াস বুস্টার</h2>
+            <p style="margin: 5px 0 0; font-size: 13px; opacity: 0.9;">আপনার এলাকা বড় করুন, বেশি টিউশন পান</p>
+        </div>
+        <div style="padding:25px;">
+            <div class="plan-option active">
+                <div>
+                    <b style="font-size: 15px;">রেগুলার টিউটর (৫ কিমি)</b><br>
+                    <small style="color:#888;"><i class="fas fa-circle-check"></i> বর্তমানে সক্রিয় আছে</small>
+                </div>
+                <div style="color: #2ecc71; font-weight: 800; font-size: 16px;">ফ্রি</div>
+            </div>
+            <div class="plan-option" onclick="alert('পেমেন্ট গেটওয়ে লোড হচ্ছে...')">
+                <div>
+                    <b style="font-size: 15px;">পাওয়ার টিউটর (১০ কিমি)</b><br>
+                    <small style="color:#888;"><i class="fas fa-fire"></i> ২ গুণ বেশি টিউশন দেখা যাবে</small>
+                </div>
+                <div style="color: var(--primary); font-weight: 800; font-size: 16px;">৳ ১০০</div>
+            </div>
+            <div class="plan-option" onclick="alert('পেমেন্ট গেটওয়ে লোড হচ্ছে...')">
+                <div>
+                    <b style="font-size: 15px;">সুপার টিউটর (১৫ কিমি)</b><br>
+                    <small style="color:#888;"><i class="fas fa-star"></i> সর্বোচ্চ টিউশন সুবিধা</small>
+                </div>
+                <div style="color: var(--primary); font-weight: 800; font-size: 16px;">৳ ১৫০</div>
+            </div>
+            <button onclick="toggleModal(false)" style="width:100%; padding:16px; border:none; background:#f5f5f5; border-radius:18px; font-weight:700; color:#666; margin-top: 10px; cursor:pointer;">পরে করবো</button>
+        </div>
+    </div>
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -209,8 +231,7 @@
     const tIcon = L.divIcon({ html: '<div class="tuition-pin"><i class="fas fa-book-open"></i></div>', className: '', iconSize: [32, 32], iconAnchor: [16, 32] });
 
     let userMarker, rangeCircle, markers = [];
-    let currentLat, currentLon;
-    let myLat, myLon; // লাইভ লোকেশন সংরক্ষণের জন্য
+    let currentLat, currentLon, myLat, myLon;
 
     function getDistance(lat1, lon1, lat2, lon2) {
         var R = 6371;
@@ -223,7 +244,6 @@
         return (R * c).toFixed(2);
     }
 
-    // ১. লাইভ লোকেশনে ফিরে যাওয়ার ফাংশন (My Area)
     function goToMyLocation() {
         if (navigator.geolocation) {
             navigator.geolocation.getCurrentPosition(p => {
@@ -231,7 +251,7 @@
                 myLon = p.coords.longitude;
                 updateMap(myLat, myLon);
             }, () => {
-                alert("লোকেশন পারমিশন প্রয়োজন!");
+                alert("লোকেশন পারমিশন প্রয়োজন!");
             });
         }
     }
@@ -312,7 +332,7 @@
         document.getElementById('drawer-body').innerHTML = `
             <h2 style="color:var(--primary); margin-bottom:5px;">${title}</h2>
             <p style="color:#666; margin-bottom:10px;"><i class="fas fa-location-dot"></i> লোকেশন: আপনার এলাকার কাছাকাছি</p>
-            <p style="margin-bottom:20px; font-weight:bold; color:var(--primary); font-size:15px;"><i class="fas fa-person-walking"></i> আপনার থেকে দূরত্ব: ${dist} ki.m.</p>
+            <p style="margin-bottom:20px; font-weight:bold; color:var(--primary); font-size:15px;"><i class="fas fa-person-walking"></i> আপনার থেকে দূরত্ব: ${dist} কি.মি.</p>
             
             <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:25px;">
                 <div style="background:var(--light-bg); padding:15px; border-radius:15px; border:1px solid #eee;">
@@ -335,7 +355,9 @@
             <p style="line-height:1.6; color:#444; font-size:14.5px;">শিক্ষার্থীর পড়াশোনার মানোন্নয়নে একজন অভিজ্ঞ ও দায়িত্বশীল গৃহশিক্ষক খুঁজছি। বিস্তারিত জানতে আবেদন করুন।</p>
             <button onclick="applyTuition(${dist})" style="width:100%; padding:16px; background:var(--primary); color:white; border:none; border-radius:16px; font-weight:bold; font-size:16px; margin-top:20px; box-shadow: 0 4px 15px rgba(255,111,0,0.3);">আবেদন করুন</button>
         `;
-        document.getElementById('drawer').classList.add('active');
+        const drw = document.getElementById('drawer');
+        drw.style.bottom = ""; 
+        drw.classList.add('active');
         map.closePopup();
     }
 
@@ -347,22 +369,48 @@
         }
     }
 
-    function closeDrawer() { document.getElementById('drawer').classList.remove('active'); }
+    function closeDrawer() { 
+        const drw = document.getElementById('drawer');
+        drw.classList.remove('active'); 
+        setTimeout(() => { drw.style.bottom = ""; }, 400);
+    }
 
     let startY = 0;
     const drw = document.getElementById('drawer');
     const hnd = document.getElementById('drag-handle');
-    hnd.addEventListener('touchstart', (e) => startY = e.touches[0].clientY);
+    
+    hnd.addEventListener('touchstart', (e) => {
+        startY = e.touches[0].clientY;
+        drw.style.transition = 'none';
+    }, {passive: true});
+
     hnd.addEventListener('touchmove', (e) => {
         let moveY = e.touches[0].clientY - startY;
-        if (moveY > 0) drw.style.bottom = `-${moveY}px`;
-        if (moveY > 150) { closeDrawer(); drw.style.bottom = '-100%'; }
+        if (moveY > 0) {
+            drw.style.bottom = `-${moveY}px`;
+        }
+    }, {passive: true});
+
+    hnd.addEventListener('touchend', (e) => {
+        drw.style.transition = '';
+        let finalMoveY = e.changedTouches[0].clientY - startY;
+        
+        if (finalMoveY > 150) {
+            closeDrawer();
+        } else {
+            drw.style.bottom = "0";
+        }
     });
-    hnd.addEventListener('touchend', () => { if (drw.classList.contains('active')) drw.style.bottom = '0'; });
 
-    function toggleModal(show) { document.getElementById('premium-modal').style.display = show ? 'flex' : 'none'; }
+    function toggleModal(show) { 
+        document.getElementById('premium-modal').style.display = show ? 'flex' : 'none'; 
+    }
 
-    // শুরুতে লোকেশন সেট করা
+    // মডালের বাইরের অংশ ক্লিক করলে মডাল বন্ধ হবে
+    document.getElementById('premium-modal').addEventListener('click', function(e) {
+        if (e.target === this) toggleModal(false);
+    });
+
     goToMyLocation();
 </script>
 
